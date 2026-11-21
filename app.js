@@ -296,8 +296,28 @@
         anniversaryCard(dev, partner),
       ],
 
+      h("h2", { text: "Discord" }),
+      discordCard(),
+
       h("div", { style: "height:16px" }),
       signOutButton());
+  }
+
+  // Collegamento al bot Discord (bot/src/index.js): la pagina crea un codice di 6 cifre e lo
+  // pubblica su gad/v1/link/<profilo>; su Discord si scrive /link code:<codice> entro 10 minuti.
+  function discordCard() {
+    const lc = S.linkCode;
+    const fresh = lc && Date.now() - lc.at * 1000 < 10 * 60 * 1000;
+    return h("div", { class: "card" },
+      h("p", { class: "dim small", style: "margin:0 0 10px",
+        text: "Plan tasks, check Gad and send gestures from Discord." }),
+      fresh
+        ? h("p", { style: "margin:0", text: `In Discord type  /link code:${lc.code}  within 10 minutes.` })
+        : h("button", { text: "Link Discord", onclick: () => {
+            const n = crypto.getRandomValues(new Uint32Array(1))[0] % 1000000;
+            const doc = { v: 1, code: String(n).padStart(6, "0"), at: Math.floor(Date.now() / 1000) };
+            if (publish(`${ROOT}/link/${S.user}`, doc)) { S.linkCode = doc; render(); }
+          } }));
   }
 
   function progressCard(devId) {
@@ -384,6 +404,7 @@
     };
     if (S.sheet.task.type !== "weekdays" && !S.sheet.task.days) S.sheet.task.days = [1, 2, 3, 4, 5];
     if (S.sheet.task.type !== "once" && !S.sheet.task.date) S.sheet.task.date = P.logicalToday();
+    if (!S.sheet.task.dates) S.sheet.task.dates = [];
     renderSheet();
   }
 
@@ -409,14 +430,26 @@
 
     const date = h("input", { type: "date", value: t.date, min: P.logicalToday(), onchange: (e) => { t.date = e.target.value; } });
 
+    // Task in piu date: si sceglie una data e si aggiunge alla lista (massimo P.MAX_DATES)
+    const addDate = h("input", { type: "date", min: P.logicalToday(), onchange: (e) => {
+      const v = e.target.value;
+      if (P.isValidDate(v) && !t.dates.includes(v) && t.dates.length < P.MAX_DATES) t.dates = t.dates.concat(v).sort();
+      renderSheet();
+    } });
+    const dateChips = h("div", { class: "chips" }, t.dates.map((d) => h("button", { type: "button", class: "chip",
+      text: `${P.formatDate(d)}  \u00d7`, "aria-label": `Remove ${P.formatDate(d)}`,
+      onclick: () => { t.dates = t.dates.filter((x) => x !== d); renderSheet(); } })));
+
     host.replaceChildren(h("div", { class: "sheet-bg", onclick: (e) => { if (e.target === e.currentTarget) closeSheet(); } },
       h("div", { class: "sheet", role: "dialog", "aria-modal": "true" },
         h("h3", { text: sh.isNew ? "New task" : "Edit task" }),
         h("label", { text: "Name" }), title, counter,
         h("label", { text: "When" }),
-        h("div", { class: "segmented" }, typeBtn("daily", "Every day"), typeBtn("weekdays", "Some days"), typeBtn("once", "One day")),
+        h("div", { class: "segmented" }, typeBtn("daily", "Every day"), typeBtn("weekdays", "Some days"), typeBtn("once", "One day"), typeBtn("dates", "Dates")),
         t.type === "weekdays" && [h("label", { text: "Days" }), days],
         t.type === "once" && [h("label", { text: "Date" }), date],
+        t.type === "dates" && [h("label", { text: `Dates (${t.dates.length}/${P.MAX_DATES})` }), dateChips,
+          t.dates.length < P.MAX_DATES && addDate],
         sh.errors.length > 0 && h("div", { class: "errors" }, sh.errors.map((e) => h("div", { text: e }))),
         h("div", { class: "buttons" },
           h("button", { text: "Save", onclick: saveSheet }),
@@ -430,6 +463,7 @@
     const out = { id, title: t.title.trim(), type: t.type };
     if (t.type === "weekdays") out.days = [...new Set(t.days)].sort((a, b) => a - b);
     if (t.type === "once") out.date = t.date;
+    if (t.type === "dates") out.dates = [...new Set(t.dates)].sort();
     return out;
   }
 

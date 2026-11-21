@@ -103,12 +103,15 @@ button.link { background: none; color: var(--accent); width: auto; padding: 6px 
 .buttons { display: grid; gap: 10px; margin-top: 20px; }
 .buttons.two { grid-template-columns: 1fr 1fr; }
 
-.segmented { display: grid; grid-template-columns: repeat(3, 1fr); background: var(--card-2); border-radius: 14px; padding: 4px; gap: 4px; }
+.segmented { display: grid; grid-template-columns: repeat(4, 1fr); background: var(--card-2); border-radius: 14px; padding: 4px; gap: 4px; }
 .segmented button { background: transparent; color: var(--dim); padding: 10px 6px; font-size: 15px; border-radius: 10px; }
 .segmented button.on { background: var(--accent); color: #fff; }
 .days { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
 .days button { padding: 12px 0; font-size: 14px; background: var(--card-2); color: var(--dim); border-radius: 12px; }
 .days button.on { background: var(--accent); color: #fff; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+.chips:empty { display: none; }
+.chip { padding: 8px 12px; font-size: 14px; background: var(--accent); color: #fff; border-radius: 12px; }
 
 .errors { background: rgba(255,107,107,.12); color: #ffb3b3; border-radius: 14px; padding: 12px 14px;
   margin-top: 16px; font-size: 15px; line-height: 1.4; }
